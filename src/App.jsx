@@ -5,19 +5,23 @@ import Home from './page/Home.jsx/Home.jsx'
 import Cart from './page/Cart.jsx/Cart.jsx'
 import PlaceOrder from './page/PlaceOrder/PlaceOrder.jsx'
 import './index.css'
+import Footer from './component/Footer/Footer.jsx'
+
 
 const App = () => {
   return (
-    <div className='app'>
-      <Navbar />
-      <Routes>
-        
-        <Route path='/' element={<Home />} />
-        <Route path='/cart' element={<Cart />} />
-        <Route path='/place-order' element={<PlaceOrder />} />
-      </Routes>
+    <>
+      <div className='app'>
+        <Navbar />
+        <Routes>
+          <Route path='/' element={<Home />} />
+          <Route path='/cart' element={<Cart />} />
+          <Route path='/place-order' element={<PlaceOrder />} />
+        </Routes>
 
-    </div>
+      </div>
+      <Footer />
+    </>
   )
 }
 
