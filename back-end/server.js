@@ -5,6 +5,8 @@ import e from "cors";
 import { connect } from "mongoose";
 import { connectDB } from "./config/db.js";
 import foodRoute from "./routes/foodRoute.js";
+import userRoute from "./routes/userRoute.js";
+import 'dotenv/config';
 
 // app config
 const app = express();
@@ -20,6 +22,7 @@ connectDB();
 //api endpoints
 app.use("/api/food", foodRoute);
 app.use("/image", express.static("uploads"));
+app.use("/api/user", userRoute);
 
 
 app.get("/", (req, res) => {
