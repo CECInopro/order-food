@@ -7,6 +7,7 @@ import { connectDB } from "./config/db.js";
 import foodRoute from "./routes/foodRoute.js";
 import userRoute from "./routes/userRoute.js";
 import 'dotenv/config';
+import cartRoute from "./routes/cartRoute.js";
 
 // app config
 const app = express();
@@ -23,7 +24,7 @@ connectDB();
 app.use("/api/food", foodRoute);
 app.use("/image", express.static("uploads"));
 app.use("/api/user", userRoute);
-
+app.use("/api/cart", cartRoute);
 
 app.get("/", (req, res) => {
     res.send("Hello World!");
