@@ -8,6 +8,8 @@ import './index.css'
 import Footer from './component/Footer/Footer.jsx'
 import LoginPopup from './component/LoginPopup/LoginPopup.jsx'
 import { useState } from 'react'
+import Verify from './page/Verify/Verify.jsx'
+import MyOrders from './page/MyOrders/MyOrders.jsx'
 
 
 const App = () => {
@@ -23,6 +25,8 @@ const App = () => {
           <Route path='/' element={<Home />} />
           <Route path='/cart' element={<Cart />} />
           <Route path='/order' element={<PlaceOrder />} />
+          <Route path='/verify' element={<Verify />} />
+          <Route path='/myorders' element={<MyOrders />} />
         </Routes>
 
       </div>
