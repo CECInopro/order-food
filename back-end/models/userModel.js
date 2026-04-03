@@ -17,7 +17,10 @@ const userSchema = new mongoose.Schema({
     cartData: {
         type: Object,
         default: {}
-    }
+    },
+
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
 }, { minimize: false });
 
 const userModel = mongoose.models.user || mongoose.model("user", userSchema);

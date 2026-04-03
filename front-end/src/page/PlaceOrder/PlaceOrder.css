@@ -37,3 +37,83 @@
 .place-order .cart_total button {
     margin-top: 30px;
 }
+
+.place-order-promo {
+    margin-bottom: 16px;
+}
+
+.place-order-promo-label {
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: #555;
+}
+
+.place-order-promo-label-second {
+    margin-top: 14px;
+}
+
+.place-order-wallet-select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    background: #fff;
+}
+
+.place-order-promo-shop {
+    margin: 8px 0 0;
+    font-size: 13px;
+}
+
+.place-order-promo-shop a {
+    color: tomato;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.place-order-promo-shop a:hover {
+    text-decoration: underline;
+}
+
+.place-order-promo-row {
+    display: flex;
+    gap: 8px;
+}
+
+.place-order-promo-row input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.place-order-promo-btn {
+    padding: 10px 14px;
+    border: none;
+    border-radius: 4px;
+    background: tomato;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.place-order-promo-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.place-order-promo-btn.secondary {
+    background: #888;
+}
+
+.place-order-promo-applied {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #2e7d32;
+}
+
+.place-order-discount p:last-child {
+    color: #c62828;
+}

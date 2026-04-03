@@ -71,3 +71,15 @@
     font-weight: 500;
     cursor: pointer;
 }
+
+.login-popup-forgot {
+    margin-top: 8px;
+    font-size: 14px;
+    color: #ff6347;
+    cursor: pointer;
+    text-align: right;
+}
+
+.login-popup-forgot:hover {
+    text-decoration: underline;
+}
