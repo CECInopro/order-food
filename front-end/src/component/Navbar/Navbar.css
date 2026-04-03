@@ -51,6 +51,44 @@
     position: relative;
 }
 
+.navbar_profile {
+    position: relative;
+}
+
+.navbar_profile_dropdown {
+    position: absolute;
+    display: none;
+    right: 0;
+    z-index: 1;
+}
+
+.navbar_profile:hover .navbar_profile_dropdown {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-color: #f9f9f9;
+    padding: 12px 25px;
+    border-radius: 4px;
+    border: 1px solid tomato;
+    outline: 2px solid white;
+    list-style: none;
+}
+
+.navbar_profile_dropdown li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.navbar_profile_dropdown img {
+    width: 20px;
+}
+
+.navbar_profile_dropdown li:hover {
+    color: tomato;
+}
+
 .navbar-search-icon .dot {
     position: absolute;
     min-width: 10px;
