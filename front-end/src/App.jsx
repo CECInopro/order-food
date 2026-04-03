@@ -10,6 +10,10 @@ import LoginPopup from './component/LoginPopup/LoginPopup.jsx'
 import { useState } from 'react'
 import Verify from './page/Verify/Verify.jsx'
 import MyOrders from './page/MyOrders/MyOrders.jsx'
+import ForgotPassword from './page/ForgotPassword/ForgotPassword.jsx'
+import ResetPassword from './page/ResetPassword/ResetPassword.jsx'
+import Vouchers from './page/Vouchers/Vouchers.jsx'
+import ChatBubble from './component/ChatBubble/ChatBubble.jsx'
 
 
 const App = () => {
@@ -27,10 +31,14 @@ const App = () => {
           <Route path='/order' element={<PlaceOrder />} />
           <Route path='/verify' element={<Verify />} />
           <Route path='/myorders' element={<MyOrders />} />
+          <Route path='/vouchers' element={<Vouchers />} />
+          <Route path='/forgot-password' element={<ForgotPassword />} />
+          <Route path='/reset-password' element={<ResetPassword />} />
         </Routes>
 
       </div>
       <Footer />
+      <ChatBubble setShowLogin={setShowLogin} />
     </>
   )
 }

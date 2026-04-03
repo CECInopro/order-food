@@ -1,12 +1,12 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useContext, useState } from 'react'
 import "./LoginPopup.css"
 import { assets } from '../../assets/assets'
-import { useState } from 'react'
 import { StoreContext } from '../../contexts/StoreContext'
-import { useContext } from 'react'
 import axios from 'axios'
+import { useNavigate } from 'react-router-dom'
 
 const LoginPopup = ({ setShowLogin }) => {
+  const navigate = useNavigate();
   const [currState, setCurrState] = useState("Sign up");
   const [data, setData] = useState({
     name: "",
@@ -45,11 +45,14 @@ const LoginPopup = ({ setShowLogin }) => {
     }
   }
 
-
   useEffect(() => {
     console.log(data);
   }, [data])
 
+  const handleForgotPassword = () => {
+    setShowLogin(false);
+    navigate("/forgot-password");
+  }
   return (
     <div className='login-popup'>
       <form onSubmit={onLogin} className="login-popup-container">
@@ -64,6 +67,11 @@ const LoginPopup = ({ setShowLogin }) => {
           <input onChange={onChangeHandler} type="password" name='password' value={data.password} placeholder='Password' required />
         </div>
         <button type="submit">{currState === "Sign up" ? "Create Account" : "Login"}</button>
+        {currState === "Login" && (
+          <p className="login-popup-forgot" onClick={handleForgotPassword}>
+            Quên mật khẩu?
+          </p>
+        )}
         <div className="login-popup-condition">
           <input type="checkbox" required />
           <p>I agree to the terms & conditions</p>

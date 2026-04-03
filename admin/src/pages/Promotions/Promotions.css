@@ -1,0 +1,77 @@
+.promotions-page {
+    width: 70%;
+    margin-left: max(5vw, 25px);
+    margin-top: 40px;
+    color: #6d6d6d;
+}
+
+.promotions-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.promotions-subtitle {
+    margin-top: 32px;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.promotions-form {
+    gap: 16px;
+    max-width: 720px;
+}
+
+.promo-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.promo-row label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 14px;
+    min-width: 200px;
+    flex: 1;
+}
+
+.promo-row input,
+.promo-row select {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.promo-active {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.promo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1fr 1fr 0.8fr 0.5fr;
+    align-items: center;
+    gap: 8px;
+}
+
+.promo-grid-wide {
+    display: grid;
+    grid-template-columns: 1fr 0.7fr 1.1fr 1fr 1fr 0.7fr 0.5fr;
+    align-items: center;
+    gap: 8px;
+}
+
+.promo-grid b,
+.promo-grid p {
+    word-break: break-all;
+}
+
+.promo-grid-wide b,
+.promo-grid-wide p {
+    word-break: break-all;
+}

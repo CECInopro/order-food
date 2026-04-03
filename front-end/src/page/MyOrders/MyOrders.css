@@ -28,6 +28,13 @@
     color: tomato;
 }
 
+.my_orders_order p span.my_orders_promo {
+    display: block;
+    font-size: 12px;
+    color: #2e7d32;
+    margin-top: 4px;
+}
+
 .my_orders_order p b {
     font-weight: 500;
     color: #454545;

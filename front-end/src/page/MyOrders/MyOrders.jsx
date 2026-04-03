@@ -39,7 +39,12 @@ const MyOrders = () => {
                                     return item.name + " x " + item.quantity + ",";
                                 }
                             })}</p>
-                            <p>${order.amount}.00</p>
+                            <p>
+                                ${typeof order.amount === "number" ? order.amount.toFixed(2) : order.amount}
+                                {order.promoCode ? (
+                                    <span className="my_orders_promo"> · KM: {order.promoCode}</span>
+                                ) : null}
+                            </p>
                             <p>Items: {order.items.length}</p>
                             <p><span>&#x25cf;</span><b>{order.status}</b></p>
                             <button onClick={(e) => fetchOrders()}>Track Order</button>
