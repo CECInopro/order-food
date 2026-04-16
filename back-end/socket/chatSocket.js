@@ -50,6 +50,10 @@ export function attachChatSocket(io) {
                     userId: socket.userId,
                     sender: "user",
                     text,
+                    fileUrl: payload.fileUrl || null,
+                    fileType: payload.fileType || null,
+                    fileName: payload.fileName || null,
+                    fileSize: payload.fileSize || null,
                     readByUser: true,
                     readByShop: false,
                 });
@@ -82,6 +86,10 @@ export function attachChatSocket(io) {
                     userId,
                     sender: "shop",
                     text,
+                    fileUrl: payload.fileUrl || null,
+                    fileType: payload.fileType || null,
+                    fileName: payload.fileName || null,
+                    fileSize: payload.fileSize || null,
                     readByUser: false,
                     readByShop: true,
                 });
@@ -92,6 +100,46 @@ export function attachChatSocket(io) {
             } catch (err) {
                 console.error(err);
                 ack?.({ success: false, message: "Lỗi server" });
+            }
+        });
+
+        socket.on("chat:typing", (payload) => {
+            const { isTyping } = payload || {};
+            if (socket.isAdmin) {
+                socket.broadcast.emit("chat:typing", { userId: socket.userId, isTyping });
+            } else {
+                io.to("admin").emit("chat:typing", { userId: socket.userId, isTyping });
+            }
+        });
+
+        socket.on("chat:seen", async (payload) => {
+            if (socket.isAdmin) return;
+            try {
+                const { messageIds } = payload || {};
+                if (Array.isArray(messageIds) && messageIds.length > 0) {
+                    await chatMessageModel.updateMany(
+                        { _id: { $in: messageIds }, sender: "user" },
+                        { isRead: true, readAt: new Date() }
+                    );
+                    io.to("admin").emit("chat:seen", { userId: socket.userId, messageIds });
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        socket.on("chat:admin_read", async (payload) => {
+            if (!socket.isAdmin) return;
+            try {
+                const { userId } = payload || {};
+                if (!userId) return;
+                await chatMessageModel.updateMany(
+                    { userId, sender: "user", isRead: false },
+                    { isRead: true, readAt: new Date() }
+                );
+                io.to(`user:${userId}`).emit("chat:read_all", { userId });
+            } catch (err) {
+                console.error(err);
             }
         });
     });
