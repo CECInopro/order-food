@@ -1,5 +1,8 @@
 import chatMessageModel from "../models/chatMessageModel.js";
 import userModel from "../models/userModel.js";
+import quickReplyModel from "../models/quickReplyModel.js";
+import path from "path";
+import fs from "fs";
 
 const sendUserMessage = async (req, res) => {
     try {
@@ -128,6 +131,106 @@ const adminReply = async (req, res) => {
     }
 };
 
+const BASE_URL = process.env.BASE_URL || "http://localhost:5173";
+
+const uploadFile = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: "Không có file" });
+        }
+        const fileUrl = `${BASE_URL}/uploads/chat/${req.file.filename}`;
+        return res.json({
+            success: true,
+            url: fileUrl,
+            fileName: req.file.originalname,
+            fileSize: req.file.size,
+            fileType: req.file.mimetype.startsWith("image/") ? "image" : "document",
+        });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, message: "Lỗi server" });
+    }
+};
+
+const getQuickReplies = async (req, res) => {
+    try {
+        const items = await quickReplyModel
+            .find({ isActive: true })
+            .sort({ order: 1 })
+            .lean();
+        return res.json({ success: true, data: items });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, message: "Lỗi server" });
+    }
+};
+
+const listQuickReplies = async (req, res) => {
+    try {
+        const items = await quickReplyModel.find().sort({ order: 1 }).lean();
+        return res.json({ success: true, data: items });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, message: "Lỗi server" });
+    }
+};
+
+const createQuickReply = async (req, res) => {
+    try {
+        const { text, isActive = true, order = 0 } = req.body;
+        if (!text?.trim()) {
+            return res.status(400).json({ success: false, message: "Nội dung trống" });
+        }
+        const item = await quickReplyModel.create({ text: text.trim(), isActive, order });
+        return res.json({ success: true, data: item });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, message: "Lỗi server" });
+    }
+};
+
+const updateQuickReply = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { text, isActive, order } = req.body;
+        const update = {};
+        if (text !== undefined) update.text = text.trim();
+        if (isActive !== undefined) update.isActive = isActive;
+        if (order !== undefined) update.order = order;
+        const item = await quickReplyModel.findByIdAndUpdate(id, update, { new: true });
+        if (!item) return res.status(404).json({ success: false, message: "Không tìm thấy" });
+        return res.json({ success: true, data: item });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, message: "Lỗi server" });
+    }
+};
+
+const deleteQuickReply = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await quickReplyModel.findByIdAndDelete(id);
+        return res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, message: "Lỗi server" });
+    }
+};
+
+const markMessagesRead = async (req, res) => {
+    try {
+        const { userId, messageIds } = req.body;
+        await chatMessageModel.updateMany(
+            { userId, _id: { $in: messageIds }, sender: "user" },
+            { isRead: true, readAt: new Date() }
+        );
+        return res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, message: "Lỗi server" });
+    }
+};
+
 export {
     sendUserMessage,
     getMyMessages,
@@ -135,4 +238,11 @@ export {
     listConversations,
     getAdminThread,
     adminReply,
+    uploadFile,
+    getQuickReplies,
+    listQuickReplies,
+    createQuickReply,
+    updateQuickReply,
+    deleteQuickReply,
+    markMessagesRead,
 };
