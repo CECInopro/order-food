@@ -3,8 +3,10 @@ import "./ChatBubble.css";
 import { StoreContext } from "../../contexts/StoreContext";
 import axios from "axios";
 import { io } from "socket.io-client";
+import EmojiPicker from "emoji-picker-react";
 
 const socketBase = (apiUrl) => String(apiUrl || "").replace(/\/$/, "");
+const MAX_BASE64_SIZE = 512 * 1024; // 500KB
 
 const ChatBubble = ({ setShowLogin }) => {
     const { url, token } = useContext(StoreContext);
@@ -14,8 +16,14 @@ const ChatBubble = ({ setShowLogin }) => {
     const [input, setInput] = useState("");
     const [sending, setSending] = useState(false);
     const [unread, setUnread] = useState(0);
+    const [showEmoji, setShowEmoji] = useState(false);
+    const [quickReplies, setQuickReplies] = useState([]);
+    const [shopTyping, setShopTyping] = useState(false);
+    const [previewFile, setPreviewFile] = useState(null);
     const listEndRef = useRef(null);
     const socketRef = useRef(null);
+    const typingTimeoutRef = useRef(null);
+    const inputRef = useRef(null);
 
     useEffect(() => {
         openRef.current = open;
@@ -23,6 +31,19 @@ const ChatBubble = ({ setShowLogin }) => {
 
     const scrollToBottom = () => {
         listEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    const formatTime = (date) => {
+        if (!date) return "";
+        const d = new Date(date);
+        const now = new Date();
+        const diff = now - d;
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        if (minutes < 1) return "Vừa xong";
+        if (minutes < 60) return `${minutes} phút trước`;
+        if (hours < 24) return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        return d.toLocaleDateString([], { day: "2-digit", month: "2-digit" });
     };
 
     const fetchMessages = useCallback(async () => {
@@ -48,10 +69,21 @@ const ChatBubble = ({ setShowLogin }) => {
         }
     }, [url, token]);
 
+    const fetchQuickReplies = useCallback(async () => {
+        if (!token) return;
+        try {
+            const res = await axios.get(`${url}/api/chat/quick-replies`, { headers: { token } });
+            if (res.data.success) setQuickReplies(res.data.data || []);
+        } catch (e) {
+            console.error(e);
+        }
+    }, [url, token]);
+
     useEffect(() => {
         if (!open || !token) return;
         fetchMessages();
-    }, [open, token, fetchMessages]);
+        fetchQuickReplies();
+    }, [open, token, fetchMessages, fetchQuickReplies]);
 
     useEffect(() => {
         if (open) scrollToBottom();
@@ -90,13 +122,19 @@ const ChatBubble = ({ setShowLogin }) => {
                 return;
             }
             try {
-                const res = await axios.get(`${url}/api/chat/messages`, { headers: { token } });
-                if (res.data.success) setMessages(res.data.data || []);
                 const ur = await axios.get(`${url}/api/chat/unread`, { headers: { token } });
                 if (ur.data.success) setUnread(ur.data.count || 0);
             } catch (e) {
                 console.error(e);
             }
+        });
+
+        socket.on("chat:typing", ({ isTyping }) => {
+            setShopTyping(isTyping);
+        });
+
+        socket.on("chat:read_all", () => {
+            setMessages((prev) => prev.map((m) => ({ ...m, isRead: true })));
         });
 
         socket.on("connect_error", (err) => {
@@ -117,31 +155,111 @@ const ChatBubble = ({ setShowLogin }) => {
         fetchUnread();
     }, [token, fetchUnread]);
 
-    const send = (e) => {
-        e.preventDefault();
-        const text = input.trim();
-        if (!text || !token || sending) return;
-
+    const emitTyping = (isTyping) => {
         const sock = socketRef.current;
+        if (!sock || !sock.connected) return;
+        sock.emit("chat:typing", { isTyping });
+    };
+
+    const handleInputChange = (e) => {
+        setInput(e.target.value);
+        emitTyping(true);
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = setTimeout(() => emitTyping(false), 2000);
+    };
+
+    const handleEmojiClick = (emojiData) => {
+        setInput((prev) => prev + emojiData.emoji);
+        setShowEmoji(false);
+        inputRef.current?.focus();
+    };
+
+    const handleFileSelect = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        e.target.value = "";
+
+        if (file.size <= MAX_BASE64_SIZE && file.type.startsWith("image/")) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                setPreviewFile({
+                    type: "image",
+                    data: ev.target.result,
+                    name: file.name,
+                    size: file.size,
+                });
+            };
+            reader.readAsDataURL(file);
+        } else {
+            setPreviewFile({
+                type: "uploading",
+                name: file.name,
+                size: file.size,
+                file,
+            });
+        }
+    };
+
+    const sendFileViaServer = async (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await axios.post(`${url}/api/chat/upload`, formData, {
+            headers: { token, "Content-Type": "multipart/form-data" },
+        });
+        return res.data;
+    };
+
+    const sendMessage = (textToSend, fileData = null) => {
+        const text = (textToSend || input).trim();
+        const sock = socketRef.current;
+        if ((!text && !fileData) || !token || sending) return;
         if (!sock || !sock.connected) {
             alert("Đang kết nối chat, thử lại sau vài giây");
             return;
         }
 
         setSending(true);
-        sock.emit("chat:send", { text }, (res) => {
+        const payload = { text };
+        if (fileData) {
+            if (fileData.type === "image" && fileData.data) {
+                payload.fileData = fileData.data;
+                payload.fileType = "image";
+                payload.fileName = fileData.name;
+            } else {
+                payload.fileName = fileData.name;
+                payload.fileSize = fileData.size;
+            }
+        }
+
+        sock.emit("chat:send", payload, async (res) => {
             setSending(false);
             if (res?.success) {
                 setInput("");
+                setPreviewFile(null);
+                if (fileData?.type === "uploading") {
+                    await sendFileViaServer(fileData.file);
+                }
             } else {
                 alert(res?.message || "Gửi thất bại");
             }
         });
     };
 
+    const send = (e) => {
+        e.preventDefault();
+        sendMessage();
+    };
+
+    const sendQuickReply = (text) => {
+        sendMessage(text);
+    };
+
     const toggle = () => {
         setOpen((o) => !o);
-        if (!open) fetchMessages();
+        if (!open) {
+            fetchMessages();
+            setShowEmoji(false);
+        }
     };
 
     const showBadge = !open && unread > 0;
@@ -156,6 +274,20 @@ const ChatBubble = ({ setShowLogin }) => {
                             ×
                         </button>
                     </div>
+                    {quickReplies.length > 0 && (
+                        <div className="chat-quick-replies">
+                            {quickReplies.map((qr) => (
+                                <button
+                                    key={qr._id}
+                                    type="button"
+                                    className="chat-quick-reply-chip"
+                                    onClick={() => sendQuickReply(qr.text)}
+                                >
+                                    {qr.text}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                     <div className="chat-panel-body">
                         {!token ? (
                             <div className="chat-guest">
@@ -180,32 +312,89 @@ const ChatBubble = ({ setShowLogin }) => {
                                         key={m._id}
                                         className={`chat-msg ${m.sender === "user" ? "chat-msg-user" : "chat-msg-shop"}`}
                                     >
-                                        <span className="chat-msg-text">{m.text}</span>
-                                        <span className="chat-msg-time">
-                                            {m.createdAt
-                                                ? new Date(m.createdAt).toLocaleTimeString([], {
-                                                      hour: "2-digit",
-                                                      minute: "2-digit",
-                                                  })
-                                                : ""}
+                                        {m.fileUrl && m.fileType === "image" && (
+                                            <img
+                                                src={m.fileUrl}
+                                                alt="attachment"
+                                                className="chat-msg-image"
+                                                onClick={() => window.open(m.fileUrl, "_blank")}
+                                            />
+                                        )}
+                                        {m.fileUrl && m.fileType === "document" && (
+                                            <a href={m.fileUrl} target="_blank" rel="noopener noreferrer" className="chat-msg-file">
+                                                📄 {m.fileName || "File"} ({(m.fileSize / 1024).toFixed(1)} KB)
+                                            </a>
+                                        )}
+                                        {m.text && <span className="chat-msg-text">{m.text}</span>}
+                                        <span className="chat-msg-meta">
+                                            <span className="chat-msg-time">{formatTime(m.createdAt)}</span>
+                                            {m.sender === "user" && (
+                                                <span className={`chat-msg-status ${m.isRead ? "read" : "sent"}`}>
+                                                    {m.isRead ? "✓✓" : "✓"}
+                                                </span>
+                                            )}
                                         </span>
                                     </li>
                                 ))}
                                 <div ref={listEndRef} />
                             </ul>
                         )}
+                        {shopTyping && (
+                            <div className="chat-typing">
+                                <span className="chat-typing-dot" />
+                                <span className="chat-typing-dot" />
+                                <span className="chat-typing-dot" />
+                                <span className="chat-typing-text">Shop đang nhập tin nhắn...</span>
+                            </div>
+                        )}
                     </div>
+                    {previewFile && (
+                        <div className="chat-preview">
+                            {previewFile.type === "image" ? (
+                                <div className="chat-preview-image">
+                                    <img src={previewFile.data} alt="preview" />
+                                    <button type="button" className="chat-preview-remove" onClick={() => setPreviewFile(null)}>×</button>
+                                </div>
+                            ) : (
+                                <div className="chat-preview-file">
+                                    📄 {previewFile.name}
+                                    <button type="button" className="chat-preview-remove" onClick={() => setPreviewFile(null)}>×</button>
+                                </div>
+                            )}
+                        </div>
+                    )}
                     {token && (
                         <form className="chat-panel-footer" onSubmit={send}>
+                            <div className="chat-footer-left">
+                                <label className="chat-attach-btn" htmlFor="chat-file-input">
+                                    📎
+                                </label>
+                                <input
+                                    type="file"
+                                    id="chat-file-input"
+                                    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                                    onChange={handleFileSelect}
+                                    style={{ display: "none" }}
+                                />
+                                <button type="button" className="chat-emoji-btn" onClick={() => setShowEmoji((v) => !v)}>
+                                    😊
+                                </button>
+                            </div>
+                            {showEmoji && (
+                                <div className="chat-emoji-picker">
+                                    <EmojiPicker onEmojiClick={handleEmojiClick} />
+                                </div>
+                            )}
                             <input
+                                ref={inputRef}
                                 type="text"
                                 value={input}
-                                onChange={(e) => setInput(e.target.value)}
+                                onChange={handleInputChange}
                                 placeholder="Nhập tin nhắn..."
                                 maxLength={2000}
                                 disabled={sending}
                             />
-                            <button type="submit" disabled={sending || !input.trim()}>
+                            <button type="submit" disabled={sending || (!input.trim() && !previewFile)}>
                                 Gửi
                             </button>
                         </form>
