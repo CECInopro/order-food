@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
+import fs from "fs";
 import { connectDB } from "./config/db.js";
 import foodRoute from "./routes/foodRoute.js";
 import userRoute from "./routes/userRoute.js";
@@ -11,6 +12,11 @@ import orderRouter from "./routes/orderRouter.js";
 import promotionRoute from "./routes/promotionRoute.js";
 import chatRoute from "./routes/chatRoute.js";
 import { attachChatSocket } from "./socket/chatSocket.js";
+
+const chatDir = "uploads/chat";
+if (!fs.existsSync(chatDir)) {
+    fs.mkdirSync(chatDir, { recursive: true });
+}
 
 const app = express();
 const port = 4000;
