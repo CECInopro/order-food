@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
-import fs from "fs";
 import { connectDB } from "./config/db.js";
 import foodRoute from "./routes/foodRoute.js";
 import userRoute from "./routes/userRoute.js";
@@ -13,21 +12,18 @@ import promotionRoute from "./routes/promotionRoute.js";
 import chatRoute from "./routes/chatRoute.js";
 import { attachChatSocket } from "./socket/chatSocket.js";
 
-const chatDir = "uploads/chat";
-if (!fs.existsSync(chatDir)) {
-    fs.mkdirSync(chatDir, { recursive: true });
-}
-
 const app = express();
-const port = 4000;
+const port = process.env.PORT || 4000;
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: [process.env.CLIENT_URL, process.env.ADMIN_URL].filter(Boolean),
+    credentials: true,
+}));
 
 connectDB();
 
 app.use("/api/food", foodRoute);
-app.use("/image", express.static("uploads"));
 app.use("/api/user", userRoute);
 app.use("/api/cart", cartRoute);
 app.use("/api/order", orderRouter);
@@ -42,7 +38,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: "*",
+        origin: [process.env.CLIENT_URL, process.env.ADMIN_URL].filter(Boolean),
         methods: ["GET", "POST"],
     },
 });

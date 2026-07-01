@@ -1,8 +1,6 @@
 import chatMessageModel from "../models/chatMessageModel.js";
 import userModel from "../models/userModel.js";
 import quickReplyModel from "../models/quickReplyModel.js";
-import path from "path";
-import fs from "fs";
 
 const sendUserMessage = async (req, res) => {
     try {
@@ -131,17 +129,14 @@ const adminReply = async (req, res) => {
     }
 };
 
-const BASE_URL = process.env.BASE_URL || "http://localhost:5173";
-
 const uploadFile = async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ success: false, message: "Không có file" });
         }
-        const fileUrl = `${BASE_URL}/uploads/chat/${req.file.filename}`;
         return res.json({
             success: true,
-            url: fileUrl,
+            url: req.file.path,
             fileName: req.file.originalname,
             fileSize: req.file.size,
             fileType: req.file.mimetype.startsWith("image/") ? "image" : "document",
